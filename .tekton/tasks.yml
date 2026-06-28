@@ -58,3 +58,30 @@ spec:
           pip install -r requirements.txt
           nosetests $(params.args)
         
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: flake8
+spec:
+  description: This task runs flake8 linter to ensure code quality
+  workspaces:
+    - name: source
+  steps:
+    - name: step-flake8
+      image: python:3.9-slim
+      workingDir: $(workspaces.source.path)
+      script: |
+        #!/bin/bash
+        set -e
+        # 1. Temiz container içine  ve flake8'i yüklüyoruz
+        python -m pip install --upgrade pip wheel
+        if [ -f requirements.txt ]; then
+          pip install -r requirements.txt
+        else
+          pip install flake8==4.0.1
+        fi
+        
+        # 2. Artk flake8 komutu sorunsuz 
+        flake8 service --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 service --count --max-complexity=10 --max-line-length=127 --statistics
